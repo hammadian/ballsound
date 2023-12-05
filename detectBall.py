@@ -7,16 +7,16 @@ import numpy as np
 import statistics
 import collections
 import pandas as pd
+
 #convert audio to datasegment
 sound = AudioSegment.from_file("./output-audio.aac", "aac")
 samples = sound.get_array_of_samples()
 samples_list=samples.tolist()
-starti=21000
-endi=22000
+
 abs_samples_list = [abs(ele) for ele in samples_list]
 abs_samples_list_pd=pd.Series(abs_samples_list)
 
-#%% slow down to count
+#%% slow down to count function
 #play(sound)  #play sound
 def speed_change(sound, speed=1.0):
     # Manually override the frame_rate. This tells the computer how many
@@ -35,14 +35,14 @@ def speed_change(sound, speed=1.0):
 print(sound.frame_count())
 print(len(samples_list))
 # milliseconds in the sound track
-part_file=samples[400000: 500000]
+part_file=samples[1200000: 1300000]
 short_sound = AudioSegment(part_file.tobytes(), frame_rate=sound.frame_rate,sample_width=sound.sample_width,channels=1)
 slow_sound = speed_change(short_sound, 0.1)
 #%%
 play(slow_sound)
 #%%
-
-300000: 400000
+11111111111111111111111
+#300000: 400000
 1111111111111111111111111111
 #200000: 300000
 1111111111111111111111111
@@ -50,6 +50,7 @@ play(slow_sound)
 11111111111111111111111111
 111111111111111111111111
 111111111111111111111111
+
 part_samples=slow_sound.get_array_of_samples().tolist()
 plt.plot(part_samples)
 plt.show()
@@ -63,19 +64,55 @@ for i in range(90,100):
     print(percentile, sum(above_list))
 
 
-# %%
+# %% where is my cutoff to identify the signal
 # 80 th percentile good
+starti=500000
+endi=800000
+window_size=1000
 req_percentile=np.percentile(abs_samples_list,80)
 max_val=max(abs_samples_list)
 # [f(x) if condition else g(x) for x in sequence]
 signal_on=[max_val if x >req_percentile else 0 for x in abs_samples_list]
 block_signal_on=signal_on.copy()
-window_size=10
 for i in range(window_size, len(samples_list)-window_size):
     if max_val in signal_on[i-window_size:i+window_size]:
         block_signal_on[i]=max_val
-plt.plot(samples_list[starti:endi])
-plt.plot(signal_on[starti:endi], '--r')
-plt.plot(block_signal_on[starti:endi],'g')
+plt.figure(figsize=(10,6),dpi=600)
+plt.plot(samples_list)
+plt.plot(block_signal_on,'g')
 plt.show()
-#%%
+#%% count the bounces how big are windows
+count=0
+runner=1
+block_sizes=[]
+block_size=0
+block_start=[]
+aStart=False
+while runner<len(block_signal_on):
+    if block_signal_on[runner]!=0 and block_signal_on[runner-1]==0:
+        count+=1
+        block_sizes.append(block_size)
+        block_size=0
+        block_start.append(runner)
+        aStart=True
+    elif block_signal_on[runner]!=0 and block_signal_on[runner-1]!=0:
+        block_size+=1
+    elif aStart and block_signal_on[runner]==0 and block_signal_on[runner-1]==0:
+        aStart=False
+        block_start[-1]=(block_start[-1], runner)
+        print(runner)
+    runner+=1
+# print(count, block_sizes)
+# print(block_start)
+# %%
+# 24 bings for first one
+s,e = block_start[1]
+bingsPerFrame=24/(e-s)
+bingsCounts=[]
+for i in range(len(block_start)):
+    s,e=block_start[i]
+    bingsCounts.append((e-s)*bingsPerFrame)
+print(bingsCounts)
+
+
+# %%
