@@ -7,9 +7,14 @@ import numpy as np
 import statistics
 import collections
 import pandas as pd
+from pydub.utils import mediainfo
 
 #convert audio to datasegment
-sound = AudioSegment.from_file("./output-audio.aac", "aac")
+FILE_NAME='./sound_of_ball_original.wav'
+info = mediainfo(FILE_NAME)
+original_sample_rate=int(info['sample_rate'])
+sound = AudioSegment.from_file(FILE_NAME)
+# sound = AudioSegment.from_file("./output-audio.aac", "aac")
 samples = sound.get_array_of_samples()
 samples_list=samples.tolist()
 
@@ -17,7 +22,6 @@ abs_samples_list = [abs(ele) for ele in samples_list]
 abs_samples_list_pd=pd.Series(abs_samples_list)
 
 #%% slow down to count function
-#play(sound)  #play sound
 def speed_change(sound, speed=1.0):
     # Manually override the frame_rate. This tells the computer how many
     # samples to play per second
@@ -30,7 +34,6 @@ def speed_change(sound, speed=1.0):
     # know how to play audio at standard frame rate (like 44.1k)
     return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
 
-# play(slow_sound)
 #%%
 print(sound.frame_count())
 print(len(samples_list))
@@ -39,22 +42,8 @@ part_file=samples[1200000: 1300000]
 short_sound = AudioSegment(part_file.tobytes(), frame_rate=sound.frame_rate,sample_width=sound.sample_width,channels=1)
 slow_sound = speed_change(short_sound, 0.1)
 #%%
-play(slow_sound)
-#%%
-11111111111111111111111
-#300000: 400000
-1111111111111111111111111111
-#200000: 300000
-1111111111111111111111111
-# 100000:200000
-11111111111111111111111111
-111111111111111111111111
-111111111111111111111111
-
 part_samples=slow_sound.get_array_of_samples().tolist()
 plt.plot(part_samples)
-plt.show()
-plt.plot(part_file)
 plt.show()
 #%% counting the hits
 abs_part_samples=[abs(x) for x in part_samples]
@@ -66,8 +55,7 @@ for i in range(90,100):
 
 # %% where is my cutoff to identify the signal
 # 80 th percentile good
-starti=500000
-endi=800000
+
 window_size=1000
 req_percentile=np.percentile(abs_samples_list,80)
 max_val=max(abs_samples_list)
